@@ -2,22 +2,26 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/index.py",
+      "src": "api/app.py",
       "use": "@vercel/python"
     },
     {
-      "src": "index.html",
+      "src": "static/**",
       "use": "@vercel/static"
     }
   ],
   "routes": [
     {
-      "src": "/text-to-speech",
-      "dest": "api/index.py"
+      "src": "/static/(.*)",
+      "dest": "/static/$1"
     },
     {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "src": "/",
+      "dest": "api/app.py"
+    },
+    {
+      "src": "/tts",
+      "dest": "api/app.py"
     }
   ]
 }
