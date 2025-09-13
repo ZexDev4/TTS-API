@@ -31,8 +31,9 @@ def validate_text(text):
         raise ValueError("Teks tidak boleh kosong.")
     if len(text) > MAX_CHARS:
         raise ValueError(f"Teks terlalu panjang ({len(text)} karakter). Maksimal {MAX_CHARS} karakter.")
-    # Sanitize: keep alphanumeric, spaces, and common punctuation
-    text = re.sub(r'[^\w\s.,!?\'"-]', '', text)
+    # Sanitize: keep alphanumeric, spaces, and common punctuation; replace ellipses
+    text = re.sub(r'\.{2,}|…', '.', text)  # Replace ... or … with .
+    text = re.sub(r'[^\w\s.,!?\'"-]', '', text)  # Remove other non-standard characters
     return text
 
 def is_valid_base64(s):
@@ -54,6 +55,9 @@ def send_request(text):
     }
     try:
         response = requests.post(ELEVENLABS_URL, headers=get_headers(), json=data, stream=True)
+        print(f"ElevenLabs response status: {response.status_code}")
+        if response.status_code != 200:
+            print(f"ElevenLabs response content: {response.text[:500]}")
         response.raise_for_status()
         return response
     except requests.RequestException as re:
@@ -66,7 +70,7 @@ def parse_audio_chunks(response):
     for line in response.iter_lines():
         if line:
             line = line.decode('utf-8').strip()
-            print(f"Raw response line: {line}")
+            print(f"Raw response line: {line[:100]}...")
             if line.startswith("{") and line.endswith("}"):
                 try:
                     obj = json.loads(line)
@@ -77,7 +81,7 @@ def parse_audio_chunks(response):
                         else:
                             print(f"Invalid base64 chunk skipped: {chunk[:50]}...")
                 except json.JSONDecodeError as e:
-                    print(f"Failed to parse JSON line: {line}, error: {e}")
+                    print(f"Failed to parse JSON line: {line[:50]}..., error: {e}")
                     continue
     print(f"Valid audio chunks collected: {len(audio_chunks)}")
     return audio_chunks
@@ -86,11 +90,12 @@ def parse_audio_chunks(response):
 def text_to_speech():
     """Endpoint to convert text to audio and return base64."""
     try:
-        input_text = request.args.get('text', '').strip()  # Strip whitespace
+        input_text = request.args.get('text', '').strip()
         if not input_text:
             return jsonify({"error": "Parameter 'text' diperlukan dalam query string."}), 400
 
         validated_text = validate_text(input_text)
+        print(f"Sanitized text: {validated_text}")
         response = send_request(validated_text)
         audio_chunks = parse_audio_chunks(response)
 
@@ -98,7 +103,7 @@ def text_to_speech():
             combined_base64 = "".join(audio_chunks)
             if not is_valid_base64(combined_base64):
                 print(f"Invalid combined base64: {combined_base64[:50]}...")
-                return jsonify({"error": "Invalid base64 audio data from API."}), 500
+                return jsonify({"error": "Invalid base64 audio data from API. Try simpler text (e.g., avoid ellipses)."}), 500
             print(f"Processed text-to-speech for text length: {len(validated_text)}")
             return jsonify({
                 "status": "success",
@@ -107,16 +112,16 @@ def text_to_speech():
             }), 200
         else:
             print("No valid audio_base64 found in response")
-            return jsonify({"error": "Tidak ada audio_base64 valid ditemukan di response."}), 500
+            return jsonify({"error": "No valid audio data received from API. Try simpler text (e.g., avoid ellipses)."}), 500
 
     except ValueError as ve:
         print(f"Validation error: {ve}")
         return jsonify({"error": str(ve)}), 400
     except requests.RequestException as re:
-        return jsonify({"error": f"Gagal mengirim request ke ElevenLabs: {re}"}), 500
+        return jsonify({"error": f"Failed to process request to ElevenLabs: {re}. Try simpler text."}), 500
     except Exception as e:
         print(f"Unexpected error: {e}")
-        return jsonify({"error": f"Terjadi kesalahan: {e}"}), 500
+        return jsonify({"error": f"Internal server error: {e}. Try simpler text."}), 500
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=False)
