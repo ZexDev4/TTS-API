@@ -59,7 +59,6 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        /* Syntax highlighting untuk code */
         .code-keyword { color: #60a5fa; }
         .code-string { color: #34d399; }
         .code-comment { color: #6b7280; }
@@ -275,14 +274,15 @@ https.get(<span class="code-string">'https://tts-api-liart.vercel.app/text-to-sp
             try {
                 const response = await fetch(`/text-to-speech?text=${encodeURIComponent(text)}`);
                 if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! Status: ${response.status}`);
                 }
                 const data = await response.json();
 
                 if (data.status === 'success') {
                     let audioBase64 = data.audio_base64;
                     if (!/^[A-Za-z0-9+/=]+$/.test(audioBase64)) {
-                        throw new Error('Invalid base64 string received. Try simplifying the input text.');
+                        throw new Error('Invalid base64 string received. Try simplifying the input text (e.g., avoid ellipses "...").');
                     }
                     const padding = (4 - audioBase64.length % 4) % 4;
                     audioBase64 += '='.repeat(padding);
@@ -306,7 +306,7 @@ https.get(<span class="code-string">'https://tts-api-liart.vercel.app/text-to-sp
                     throw new Error(data.error || 'Failed to generate audio.');
                 }
             } catch (err) {
-                errorP.textContent = `Error: ${err.message}. Try using simpler text (e.g., avoid special characters).`;
+                errorP.textContent = `Error: ${err.message}. Try using simpler text (e.g., avoid ellipses "...").`;
                 console.error('Error details:', err);
             }
         });
@@ -328,7 +328,7 @@ https.get(<span class="code-string">'https://tts-api-liart.vercel.app/text-to-sp
                 return new Blob(byteArrays, { type: mimeType });
             } catch (e) {
                 console.error('Base64 decoding error:', e);
-                throw new Error('Invalid base64 audio data');
+                throw new Error('Invalid base64 audio data. Try simpler text.');
             }
         }
     </script>
