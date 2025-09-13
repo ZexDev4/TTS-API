@@ -4,19 +4,11 @@
     {
       "src": "api/index.py",
       "use": "@vercel/python"
-    },
-    {
-      "src": "*.html",
-      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
-      "src": "/api/generate-audio",
-      "dest": "api/index.py"
-    },
-    {
-      "src": "/api/health",
+      "src": "/text-to-speech",
       "dest": "api/index.py"
     },
     {
