@@ -1,124 +1,106 @@
+from flask import Flask, request, jsonify
 import requests
 import json
-import base64
 import random
-import uuid
-from flask import Flask, request, jsonify, Response
-from io import BytesIO
-import time
-from pathlib import Path
 
 app = Flask(__name__)
 
-# ======================
-# Config
-# ======================
+# Configuration (hardcoded variables)
 MAX_CHARS = 1000
-OUTPUT_DIR = Path("output_audio")
-OUTPUT_DIR.mkdir(exist_ok=True)
-
-user_agents = [
+ELEVENLABS_URL = "https://api.elevenlabs.io/v1/text-to-speech/1k39YpzqXZn52BgyLyGO/stream/with-timestamps?allow_unauthenticated=1"
+USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15",
     "Mozilla/5.0 (Linux; Android 11; SM-A207F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Mobile Safari/537.36",
     "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:116.0) Gecko/20100101 Firefox/116.0"
 ]
 
-ELEVENLABS_URL = "https://api.elevenlabs.io/v1/text-to-speech/1k39YpzqXZn52BgyLyGO/stream/with-timestamps?allow_unauthenticated=1"
+def get_headers():
+    """Generate headers with random user-agent."""
+    return {
+        "accept": "*/*",
+        "content-type": "application/json",
+        "user-agent": random.choice(USER_AGENTS)
+    }
 
-headers = {
-    "accept": "*/*",
-    "content-type": "application/json",
-    "user-agent": random.choice(user_agents)
-}
+def validate_text(text):
+    """Validate text length and content."""
+    if not text:
+        raise ValueError("Teks tidak boleh kosong.")
+    if len(text) > MAX_CHARS:
+        raise ValueError(f"Teks terlalu panjang ({len(text)} karakter). Maksimal {MAX_CHARS} karakter.")
+    return text
 
-# ======================
-# Helper Function: Call ElevenLabs API
-# ======================
-def call_elevenlabs_api(text, model_id="eleven_v3", speed=1.0):
-    """Call ElevenLabs API to convert text to speech."""
+def send_request(text):
+    """Send request to ElevenLabs API."""
     data = {
         "text": text,
-        "model_id": model_id,
-        "voice_settings": {"speed": speed}
+        "model_id": "eleven_v3",
+        "voice_settings": {"speed": 1}
     }
-    
-    start_time = time.time()
-    response = requests.post(ELEVENLABS_URL, headers=headers, json=data)
-    if response.status_code != 200:
-        raise ValueError(f"API request failed: {response.status_code} - {response.text}")
-    
+    try:
+        response = requests.post(ELEVENLABS_URL, headers=get_headers(), json=data, stream=True)
+        response.raise_for_status()
+        return response
+    except requests.RequestException as re:
+        print(f"ElevenLabs request failed: {re}")  # Logging ke stdout
+        raise
+
+def parse_audio_chunks(response):
+    """Parse audio_base64 from streaming response."""
     audio_chunks = []
     for line in response.iter_lines():
         if line:
-            try:
-                obj = json.loads(line.decode('utf-8'))
-                if "audio_base64" in obj:
-                    audio_chunks.append(obj["audio_base64"])
-            except json.JSONDecodeError:
-                continue
-    
-    if not audio_chunks:
-        raise ValueError("No audio_base64 found in response.")
-    
-    audio_bytes = b""
-    for chunk in audio_chunks:
-        try:
-            audio_bytes += base64.b64decode(chunk)
-        except base64.binascii.Error as e:
-            print(f"Invalid base64 chunk: {e}")
-            continue
-    
-    elapsed_time = time.time() - start_time
-    return audio_bytes, elapsed_time
+            line = line.decode('utf-8').strip()
+            if line.startswith("{") and line.endswith("}"):
+                try:
+                    obj = json.loads(line)
+                    if "audio_base64" in obj:
+                        audio_chunks.append(obj["audio_base64"])
+                except json.JSONDecodeError as e:
+                    print(f"Failed to parse JSON line: {line}, error: {e}")  # Logging ke stdout
+                    continue
+    return audio_chunks
 
-# ======================
-# API Endpoint: Generate Audio
-# ======================
-@app.route('/generate-audio', methods=['POST'])
-def generate_audio():
-    """Generate audio from text using ElevenLabs API."""
+@app.route('/text-to-speech', methods=['GET'])
+def text_to_speech():
+    """Endpoint to convert text to audio and return base64."""
     try:
-        # Validate input
-        input_data = request.json
-        if not input_data or 'text' not in input_data:
-            return jsonify({"error": "Missing 'text' in request body"}), 400
-        
-        text_data = input_data['text'].strip()
-        model_id = input_data.get('model_id', 'eleven_v3')
-        speed = float(input_data.get('speed', 1.0))
-        
-        # Validate text length
-        if len(text_data) > MAX_CHARS:
-            return jsonify({"error": f"Text too long ({len(text_data)} characters). Maximum is {MAX_CHARS}."}), 400
-        
-        # Call API and get audio
-        audio_bytes, elapsed_time = call_elevenlabs_api(text_data, model_id, speed)
-        
-        # Save response for debugging (optional)
-        response_filename = OUTPUT_DIR / f"response_{uuid.uuid4()}.txt"
-        with open(response_filename, "w", encoding="utf-8") as f:
-            f.write(json.dumps({"text": text_data, "model_id": model_id, "speed": speed}))
-        
-        # Return audio as streamed response
-        return Response(
-            audio_bytes,
-            mimetype='audio/mpeg',
-            headers={"X-Processing-Time": f"{elapsed_time:.2f}"}
-        )
-    
+        # Ambil teks dari query parameter
+        input_text = request.args.get('text')
+        if not input_text:
+            return jsonify({"error": "Parameter 'text' diperlukan dalam query string."}), 400
+
+        # Validasi teks
+        validated_text = validate_text(input_text)
+
+        # Kirim request ke ElevenLabs
+        response = send_request(validated_text)
+
+        # Parse audio chunks
+        audio_chunks = parse_audio_chunks(response)
+
+        # Gabungkan chunks dan kembalikan sebagai base64
+        if audio_chunks:
+            combined_base64 = "".join(audio_chunks)
+            print(f"Processed text-to-speech for text length: {len(validated_text)}")  # Logging ke stdout
+            return jsonify({
+                "status": "success",
+                "audio_base64": combined_base64,
+                "audio_format": "mp3"
+            }), 200
+        else:
+            print("No audio_base64 found in response")  # Logging ke stdout
+            return jsonify({"error": "Tidak ada audio_base64 ditemukan di response."}), 500
+
     except ValueError as ve:
-        return jsonify({"error": str(ve)}), 500
+        print(f"Validation error: {ve}")  # Logging ke stdout
+        return jsonify({"error": str(ve)}), 400
+    except requests.RequestException as re:
+        return jsonify({"error": f"Gagal mengirim request ke ElevenLabs: {re}"}), 500
     except Exception as e:
-        return jsonify({"error": f"Internal server error: {str(e)}"}), 500
+        print(f"Unexpected error: {e}")  # Logging ke stdout
+        return jsonify({"error": f"Terjadi kesalahan: {e}"}), 500
 
-# ======================
-# Health Check Endpoint
-# ======================
-@app.route('/health', methods=['GET'])
-def health():
-    """Check API health."""
-    return jsonify({"status": "healthy", "timestamp": time.strftime("%Y-%m-%d %H:%M:%S WIB")}), 200
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=5000, debug=False)
