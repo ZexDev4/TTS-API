@@ -7,82 +7,196 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom CSS untuk tambahan styling */
+        /* Custom CSS untuk tema modern */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f9fafb;
-            color: #1f2937;
+            background: linear-gradient(to bottom right, #f0f9ff, #dbeafe);
+            color: #1e293b;
+            transition: all 0.3s ease;
         }
         .dark body {
-            background-color: #111827;
-            color: #f9fafb;
+            background: linear-gradient(to bottom right, #1e293b, #0f172a);
+            color: #f1f5f9;
         }
-        /* Dark mode toggle */
-        .dark-toggle:checked ~ body {
-            background-color: #111827;
-            color: #f9fafb;
+        /* Enhanced shadows and hover effects */
+        .card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .dark .card {
+            background: #1e293b;
+        }
+        /* Code block styling */
+        pre {
+            background: #f3f4f6;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            overflow-x: auto;
+        }
+        .dark pre {
+            background: #0f172a;
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-4">
-    <header class="w-full max-w-4xl mb-8">
-        <h1 class="text-4xl font-bold text-center">TTS API - Convert Text to Speech</h1>
-        <p class="text-center mt-2 text-gray-600">A simple API using ElevenLabs. Test it below or view docs.</p>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 md:p-8">
+    <header class="w-full max-w-6xl mb-8 text-center">
+        <h1 class="text-4xl md:text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">TTS API - Convert Text to Speech</h1>
+        <p class="mt-2 text-lg text-gray-600 dark:text-gray-300">Powered by ElevenLabs. Test the API or explore documentation below.</p>
+        <!-- Dark mode toggle -->
+        <label class="mt-4 inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="dark-toggle" class="sr-only peer">
+            <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+            <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Dark Mode</span>
+        </label>
     </header>
 
-    <main class="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8">
+    <main class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
         <!-- Menu Testing API -->
-        <section class="bg-white p-6 rounded-lg shadow-md">
-            <h2 class="text-2xl font-semibold mb-4">Test API</h2>
+        <section class="card p-6 md:p-8">
+            <h2 class="text-2xl md:text-3xl font-semibold mb-4">Test API</h2>
             <form id="tts-form" class="space-y-4">
                 <div>
-                    <label for="text" class="block text-sm font-medium">Input Text (Max 1000 chars):</label>
-                    <textarea id="text" class="w-full h-32 p-2 border rounded-md" placeholder="Enter text here..."></textarea>
+                    <label for="text" class="block text-sm font-medium">Input Text:</label>
+                    <textarea id="text" class="w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white" placeholder="Enter text here..."></textarea>
+                    <p class="text-sm text-gray-500 mt-1">Character count: <span id="char-count">0</span> / 1000</p>
                 </div>
-                <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700">Submit</button>
+                <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 transition-all">Submit</button>
             </form>
-            <div id="result" class="mt-4 hidden">
-                <p id="status" class="text-green-600 font-bold"></p>
-                <audio id="audio-player" controls class="w-full mt-2"></audio>
-                <button id="download-btn" class="w-full bg-green-600 text-white py-2 rounded-md mt-4 hover:bg-green-700">Download MP3</button>
-                <p id="error" class="text-red-600 mt-2"></p>
+            <div id="result" class="mt-6 hidden space-y-4">
+                <p id="status" class="text-green-600 font-bold text-lg"></p>
+                <audio id="audio-player" controls class="w-full"></audio>
+                <button id="download-btn" class="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 rounded-lg font-medium hover:from-green-700 hover:to-emerald-700 transition-all hidden">Download MP3</button>
+                <p id="error" class="text-red-600 mt-2 text-sm"></p>
             </div>
         </section>
 
         <!-- Menu Dokumentasi API -->
-        <section class="bg-white p-6 rounded-lg shadow-md">
-            <h2 class="text-2xl font-semibold mb-4">API Documentation</h2>
-            <div class="space-y-4">
+        <section class="card p-6 md:p-8">
+            <h2 class="text-2xl md:text-3xl font-semibold mb-4">API Documentation</h2>
+            <div class="space-y-6">
                 <h3 class="text-xl font-medium">Endpoint</h3>
-                <p><code>GET /text-to-speech?text=&lt;your_text&gt;</code></p>
-                <p>Converts text to speech and returns base64-encoded MP3 audio.</p>
+                <p><code class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">GET /text-to-speech?text=&lt;your_text&gt;</code></p>
+                <p>Converts text to speech and returns base64-encoded MP3 audio. Max 1000 characters.</p>
 
                 <h3 class="text-xl font-medium">Parameters</h3>
-                <ul class="list-disc pl-5">
+                <ul class="list-disc pl-5 space-y-1">
                     <li><strong>text</strong>: Required. The text to convert (max 1000 characters).</li>
                 </ul>
 
                 <h3 class="text-xl font-medium">Response (JSON)</h3>
-                <pre class="bg-gray-100 p-2 rounded-md overflow-auto">
-{
+                <pre class="text-sm"><code>{
   "status": "success",
   "audio_base64": "&lt;base64_string&gt;",
   "audio_format": "mp3"
-}
-                </pre>
-                <p>On error: <code>{"error": "&lt;message&gt;"}</code></p>
+}</code></pre>
+                <p>On error: <code class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">{"error": "&lt;message&gt;"}</code></p>
 
                 <h3 class="text-xl font-medium">Example Usage</h3>
-                <p>curl "https://tts-api-liart.vercel.app/text-to-speech?text=Hello%20World"</p>
+                <p class="text-sm">curl "https://tts-api-liart.vercel.app/text-to-speech?text=Hello%20World"</p>
+
+                <h3 class="text-xl font-medium">Code Examples</h3>
+                <div class="space-y-4">
+                    <!-- Python Example -->
+                    <div>
+                        <h4 class="text-lg font-semibold">Python</h4>
+                        <pre class="text-sm"><code>import requests
+
+url = "https://tts-api-liart.vercel.app/text-to-speech"
+params = {"text": "Hello World"}
+response = requests.get(url, params=params)
+if response.status_code == 200:
+    data = response.json()
+    if data["status"] == "success":
+        with open("audio.mp3", "wb") as f:
+            f.write(base64.b64decode(data["audio_base64"]))
+        print("Audio downloaded!")
+    else:
+        print("Error:", data["error"])
+else:
+    print("HTTP Error:", response.status_code)</code></pre>
+                    </div>
+
+                    <!-- JavaScript (Browser) Example -->
+                    <div>
+                        <h4 class="text-lg font-semibold">JavaScript (Browser)</h4>
+                        <pre class="text-sm"><code>fetch('/text-to-speech?text=Hello%20World')
+  .then(response => response.json())
+  .then(data => {
+    if (data.status === 'success') {
+      const audioBlob = new Blob([atob(data.audio_base64)], { type: 'audio/mp3' });
+      const url = URL.createObjectURL(audioBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'audio.mp3';
+      a.click();
+    } else {
+      console.error('Error:', data.error);
+    }
+  })
+  .catch(error => console.error('Fetch error:', error));</code></pre>
+                    </div>
+
+                    <!-- Node.js Example -->
+                    <div>
+                        <h4 class="text-lg font-semibold">Node.js</h4>
+                        <pre class="text-sm"><code>const fs = require('fs');
+const https = require('https');
+
+https.get('https://tts-api-liart.vercel.app/text-to-speech?text=Hello%20World', (res) => {
+  let data = '';
+  res.on('data', (chunk) => { data += chunk; });
+  res.on('end', () => {
+    const json = JSON.parse(data);
+    if (json.status === 'success') {
+      fs.writeFileSync('audio.mp3', Buffer.from(json.audio_base64, 'base64'));
+      console.log('Audio downloaded!');
+    } else {
+      console.error('Error:', json.error);
+    }
+  });
+}).on('error', (e) => console.error('HTTPS error:', e));</code></pre>
+                    </div>
+
+                    <!-- cURL Example -->
+                    <div>
+                        <h4 class="text-lg font-semibold">cURL (Bash)</h4>
+                        <pre class="text-sm"><code>curl "https://tts-api-liart.vercel.app/text-to-speech?text=Hello%20World" > response.json
+# Then decode base64 manually if needed</code></pre>
+                    </div>
+                </div>
             </div>
         </section>
     </main>
 
-    <footer class="mt-8 text-center text-gray-500">
-        <p>Powered by ElevenLabs & Flask | Deployed on Vercel</p>
+    <footer class="mt-8 text-center text-gray-500 dark:text-gray-400">
+        <p>Powered by ElevenLabs & Flask | Deployed on Vercel | © 2025</p>
     </footer>
 
     <script>
+        // Dark mode toggle
+        const darkToggle = document.getElementById('dark-toggle');
+        darkToggle.addEventListener('change', () => {
+            document.body.classList.toggle('dark');
+        });
+
+        // Character count realtime
+        const textArea = document.getElementById('text');
+        const charCount = document.getElementById('char-count');
+        textArea.addEventListener('input', () => {
+            charCount.textContent = textArea.value.length;
+            if (textArea.value.length > 1000) {
+                charCount.classList.add('text-red-600');
+            } else {
+                charCount.classList.remove('text-red-600');
+            }
+        });
+
         // JavaScript untuk handle form submit dan download
         const form = document.getElementById('tts-form');
         const resultDiv = document.getElementById('result');
@@ -93,9 +207,13 @@
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const text = document.getElementById('text').value.trim();
+            const text = textArea.value.trim();
             if (!text) {
                 errorP.textContent = 'Text is required.';
+                return;
+            }
+            if (text.length > 1000) {
+                errorP.textContent = 'Text exceeds 1000 characters.';
                 return;
             }
 
@@ -113,7 +231,11 @@
                 const data = await response.json();
 
                 if (data.status === 'success') {
-                    const audioBase64 = data.audio_base64;
+                    let audioBase64 = data.audio_base64;
+                    // Fix padding untuk base64 jika diperlukan (penyebab error atob)
+                    const padding = (4 - audioBase64.length % 4) % 4;
+                    audioBase64 += '='.repeat(padding);
+
                     const audioBlob = base64ToBlob(audioBase64, 'audio/mp3');
                     const audioUrl = URL.createObjectURL(audioBlob);
 
@@ -138,21 +260,26 @@
             }
         });
 
-        // Fungsi helper untuk convert base64 ke Blob
+        // Fungsi helper untuk convert base64 ke Blob (diperbarui untuk handle potensi error)
         function base64ToBlob(base64, mimeType) {
-            const byteCharacters = atob(base64);
-            const byteArrays = [];
-            for (let offset = 0; offset < byteCharacters.length; offset += 512) {
-                const slice = byteCharacters.slice(offset, offset + 512);
-                const byteNumbers = new Array(slice.length);
-                for (let i = 0; i < slice.length; i++) {
-                    byteNumbers[i] = slice.charCodeAt(i);
+            try {
+                const byteCharacters = atob(base64);
+                const byteArrays = [];
+                for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+                    const slice = byteCharacters.slice(offset, offset + 512);
+                    const byteNumbers = new Array(slice.length);
+                    for (let i = 0; i < slice.length; i++) {
+                        byteNumbers[i] = slice.charCodeAt(i);
+                    }
+                    const byteArray = new Uint8Array(byteNumbers);
+                    byteArrays.push(byteArray);
                 }
-                const byteArray = new Uint8Array(byteNumbers);
-                byteArrays.push(byteArray);
+                return new Blob(byteArrays, { type: mimeType });
+            } catch (e) {
+                console.error('Base64 decoding error:', e);
+                throw new Error('Invalid base64 audio data.');
             }
-            return new Blob(byteArrays, { type: mimeType });
         }
     </script>
 </body>
-                            </html>
+    </html>
