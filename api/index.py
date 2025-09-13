@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify
 import requests
 import json
 import random
+import re
+import base64
 
 app = Flask(__name__)
 
@@ -24,12 +26,24 @@ def get_headers():
     }
 
 def validate_text(text):
-    """Validate text length and content."""
+    """Validate and sanitize text."""
     if not text:
         raise ValueError("Teks tidak boleh kosong.")
     if len(text) > MAX_CHARS:
         raise ValueError(f"Teks terlalu panjang ({len(text)} karakter). Maksimal {MAX_CHARS} karakter.")
+    # Sanitize: keep alphanumeric, spaces, and common punctuation
+    text = re.sub(r'[^\w\s.,!?\'"-]', '', text)
     return text
+
+def is_valid_base64(s):
+    """Check if string is valid base64."""
+    try:
+        if not re.match(r'^[A-Za-z0-9+/=]+$', s):
+            return False
+        base64.b64decode(s, validate=True)
+        return True
+    except Exception:
+        return False
 
 def send_request(text):
     """Send request to ElevenLabs API."""
@@ -43,7 +57,7 @@ def send_request(text):
         response.raise_for_status()
         return response
     except requests.RequestException as re:
-        print(f"ElevenLabs request failed: {re}")  # Logging ke stdout
+        print(f"ElevenLabs request failed: {re}")
         raise
 
 def parse_audio_chunks(response):
@@ -52,54 +66,56 @@ def parse_audio_chunks(response):
     for line in response.iter_lines():
         if line:
             line = line.decode('utf-8').strip()
+            print(f"Raw response line: {line}")
             if line.startswith("{") and line.endswith("}"):
                 try:
                     obj = json.loads(line)
                     if "audio_base64" in obj:
-                        audio_chunks.append(obj["audio_base64"])
+                        chunk = obj["audio_base64"]
+                        if is_valid_base64(chunk):
+                            audio_chunks.append(chunk)
+                        else:
+                            print(f"Invalid base64 chunk skipped: {chunk[:50]}...")
                 except json.JSONDecodeError as e:
-                    print(f"Failed to parse JSON line: {line}, error: {e}")  # Logging ke stdout
+                    print(f"Failed to parse JSON line: {line}, error: {e}")
                     continue
+    print(f"Valid audio chunks collected: {len(audio_chunks)}")
     return audio_chunks
 
 @app.route('/text-to-speech', methods=['GET'])
 def text_to_speech():
     """Endpoint to convert text to audio and return base64."""
     try:
-        # Ambil teks dari query parameter
-        input_text = request.args.get('text')
+        input_text = request.args.get('text', '').strip()  # Strip whitespace
         if not input_text:
             return jsonify({"error": "Parameter 'text' diperlukan dalam query string."}), 400
 
-        # Validasi teks
         validated_text = validate_text(input_text)
-
-        # Kirim request ke ElevenLabs
         response = send_request(validated_text)
-
-        # Parse audio chunks
         audio_chunks = parse_audio_chunks(response)
 
-        # Gabungkan chunks dan kembalikan sebagai base64
         if audio_chunks:
             combined_base64 = "".join(audio_chunks)
-            print(f"Processed text-to-speech for text length: {len(validated_text)}")  # Logging ke stdout
+            if not is_valid_base64(combined_base64):
+                print(f"Invalid combined base64: {combined_base64[:50]}...")
+                return jsonify({"error": "Invalid base64 audio data from API."}), 500
+            print(f"Processed text-to-speech for text length: {len(validated_text)}")
             return jsonify({
                 "status": "success",
                 "audio_base64": combined_base64,
                 "audio_format": "mp3"
             }), 200
         else:
-            print("No audio_base64 found in response")  # Logging ke stdout
-            return jsonify({"error": "Tidak ada audio_base64 ditemukan di response."}), 500
+            print("No valid audio_base64 found in response")
+            return jsonify({"error": "Tidak ada audio_base64 valid ditemukan di response."}), 500
 
     except ValueError as ve:
-        print(f"Validation error: {ve}")  # Logging ke stdout
+        print(f"Validation error: {ve}")
         return jsonify({"error": str(ve)}), 400
     except requests.RequestException as re:
         return jsonify({"error": f"Gagal mengirim request ke ElevenLabs: {re}"}), 500
     except Exception as e:
-        print(f"Unexpected error: {e}")  # Logging ke stdout
+        print(f"Unexpected error: {e}")
         return jsonify({"error": f"Terjadi kesalahan: {e}"}), 500
 
 if __name__ == "__main__":
