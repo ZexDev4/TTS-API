@@ -7,50 +7,35 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom CSS untuk tema modern */
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(to bottom right, #f0f9ff, #dbeafe);
-            color: #1e293b;
-            transition: all 0.3s ease;
-        }
-        .dark body {
             background: linear-gradient(to bottom right, #1e293b, #0f172a);
             color: #f1f5f9;
+            transition: all 0.3s ease;
         }
         .card {
-            background: white;
+            background: #1e293b;
             border-radius: 1rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
             transition: transform 0.2s, box-shadow 0.2s;
         }
         .card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-        .dark .card {
-            background: #1e293b;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
         }
         pre {
-            background: #f3f4f6;
+            background: #0f172a;
             border-radius: 0.5rem;
             padding: 1rem;
             overflow-x: auto;
         }
-        .dark pre {
-            background: #0f172a;
-        }
-        /* Custom audio player styling */
         .custom-audio-player {
             display: flex;
             align-items: center;
             gap: 1rem;
-            background: #f1f5f9;
+            background: #334155;
             border-radius: 0.5rem;
             padding: 0.5rem;
-        }
-        .dark .custom-audio-player {
-            background: #334155;
         }
         .play-btn {
             background: #3b82f6;
@@ -74,57 +59,54 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        /* Syntax highlighting untuk code */
+        .code-keyword { color: #60a5fa; }
+        .code-string { color: #34d399; }
+        .code-comment { color: #6b7280; }
+        .code-number { color: #f472b6; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4 md:p-8">
     <header class="w-full max-w-6xl mb-8 text-center">
         <h1 class="text-4xl md:text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">TTS API - Convert Text to Speech</h1>
-        <p class="mt-2 text-lg text-gray-600 dark:text-gray-300">Powered by ElevenLabs. Test the API or explore documentation below.</p>
-        <!-- Dark mode toggle -->
-        <label class="mt-4 inline-flex items-center cursor-pointer">
-            <input type="checkbox" id="dark-toggle" class="sr-only peer">
-            <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-            <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Dark Mode</span>
-        </label>
+        <p class="mt-2 text-lg text-gray-300">Powered by ElevenLabs. Test the API or explore documentation below.</p>
     </header>
 
     <main class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-        <!-- Menu Testing API -->
         <section class="card p-6 md:p-8">
             <h2 class="text-2xl md:text-3xl font-semibold mb-4">Test API</h2>
             <form id="tts-form" class="space-y-4">
                 <div>
                     <label for="text" class="block text-sm font-medium">Input Text:</label>
-                    <textarea id="text" class="w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white" placeholder="Enter text here..."></textarea>
-                    <p class="text-sm text-gray-500 mt-1">Character count: <span id="char-count">0</span> / 1000</p>
+                    <textarea id="text" class="w-full h-32 p-3 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-800 text-white" placeholder="Enter text here..."></textarea>
+                    <p class="text-sm text-gray-400 mt-1">Character count: <span id="char-count">0</span> / 1000</p>
                 </div>
                 <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 transition-all">Submit</button>
             </form>
             <div id="result" class="mt-6 hidden space-y-4">
-                <div id="success-card" class="success-card bg-green-100 dark:bg-green-900 p-4 rounded-lg hidden">
-                    <p class="text-green-600 dark:text-green-300 font-bold text-lg">Success! Audio generated.</p>
+                <div id="success-card" class="success-card bg-green-900 p-4 rounded-lg hidden">
+                    <p class="text-green-300 font-bold text-lg">Success! Audio generated.</p>
                     <div class="custom-audio-player">
                         <div id="play-btn" class="play-btn">
                             <svg id="play-icon" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg>
                             <svg id="pause-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd" /></svg>
                         </div>
                         <div class="flex-1">
-                            <input type="range" id="audio-progress" min="0" max="100" value="0" class="w-full h-2 bg-gray-200 rounded-lg cursor-pointer dark:bg-gray-700">
-                            <span id="audio-time" class="text-sm text-gray-600 dark:text-gray-300">0:00 / 0:00</span>
+                            <input type="range" id="audio-progress" min="0" max="100" value="0" class="w-full h-2 bg-gray-700 rounded-lg cursor-pointer">
+                            <span id="audio-time" class="text-sm text-gray-300">0:00 / 0:00</span>
                         </div>
                     </div>
                     <button id="download-btn" class="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 rounded-lg font-medium hover:from-green-700 hover:to-emerald-700 transition-all">Download MP3</button>
                 </div>
-                <p id="error" class="text-red-600 mt-2 text-sm"></p>
+                <p id="error" class="text-red-500 mt-2 text-sm"></p>
             </div>
         </section>
 
-        <!-- Menu Dokumentasi API -->
         <section class="card p-6 md:p-8">
             <h2 class="text-2xl md:text-3xl font-semibold mb-4">API Documentation</h2>
             <div class="space-y-6">
                 <h3 class="text-xl font-medium">Endpoint</h3>
-                <p><code class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">GET /text-to-speech?text=&lt;your_text&gt;</code></p>
+                <p><code class="bg-gray-800 px-2 py-1 rounded">GET /text-to-speech?text=&lt;your_text&gt;</code></p>
                 <p>Converts text to speech and returns base64-encoded MP3 audio. Max 1000 characters.</p>
 
                 <h3 class="text-xl font-medium">Parameters</h3>
@@ -133,111 +115,101 @@
                 </ul>
 
                 <h3 class="text-xl font-medium">Response (JSON)</h3>
-                <pre class="text-sm"><code>{
-  "status": "success",
-  "audio_base64": "&lt;base64_string&gt;",
-  "audio_format": "mp3"
-}</code></pre>
-                <p>On error: <code class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">{"error": "&lt;message&gt;"}</code></p>
+                <pre class="text-sm"><code><span class="code-keyword">{</span>
+  <span class="code-string">"status"</span>: <span class="code-string">"success"</span>,
+  <span class="code-string">"audio_base64"</span>: <span class="code-string">"&lt;base64_string&gt;"</span>,
+  <span class="code-string">"audio_format"</span>: <span class="code-string">"mp3"</span>
+<span class="code-keyword">}</span></code></pre>
+                <p>On error: <code class="bg-gray-800 px-2 py-1 rounded"><span class="code-keyword">{"error": "&lt;message&gt;"}</span></code></p>
 
                 <h3 class="text-xl font-medium">Example Usage</h3>
-                <p class="text-sm">curl "https://tts-api-liart.vercel.app/text-to-speech?text=Hello%20World"</p>
+                <p class="text-sm">curl <span class="code-string">"https://tts-api-liart.vercel.app/text-to-speech?text=Hello%20World"</span></p>
 
                 <h3 class="text-xl font-medium">Code Examples</h3>
                 <div class="space-y-4">
-                    <!-- Python Example -->
                     <div>
                         <h4 class="text-lg font-semibold">Python</h4>
-                        <pre class="text-sm"><code>import requests
-import base64
+                        <pre class="text-sm"><code><span class="code-keyword">import</span> requests
+<span class="code-keyword">import</span> base64
 
-url = "https://tts-api-liart.vercel.app/text-to-speech"
-params = {"text": "Hello World"}
+url = <span class="code-string">"https://tts-api-liart.vercel.app/text-to-speech"</span>
+params = {<span class="code-string">"text"</span>: <span class="code-string">"Hello World"</span>}
 response = requests.get(url, params=params)
-if response.status_code == 200:
+<span class="code-keyword">if</span> response.status_code == <span class="code-number">200</span>:
     data = response.json()
-    if data["status"] == "success":
-        with open("audio.mp3", "wb") as f:
-            f.write(base64.b64decode(data["audio_base64"]))
-        print("Audio downloaded!")
-    else:
-        print("Error:", data["error"])
-else:
-    print("HTTP Error:", response.status_code)</code></pre>
+    <span class="code-keyword">if</span> data[<span class="code-string">"status"</span>] == <span class="code-string">"success"</span>:
+        <span class="code-keyword">with</span> open(<span class="code-string">"audio.mp3"</span>, <span class="code-string">"wb"</span>) <span class="code-keyword">as</span> f:
+            f.write(base64.b64decode(data[<span class="code-string">"audio_base64"</span>]))
+        print(<span class="code-string">"Audio downloaded!"</span>)
+    <span class="code-keyword">else</span>:
+        print(<span class="code-string">"Error:"</span>, data[<span class="code-string">"error"</span>])
+<span class="code-keyword">else</span>:
+    print(<span class="code-string">"HTTP Error:"</span>, response.status_code)</code></pre>
                     </div>
 
-                    <!-- JavaScript (Browser) Example -->
                     <div>
                         <h4 class="text-lg font-semibold">JavaScript (Browser)</h4>
-                        <pre class="text-sm"><code>fetch('/text-to-speech?text=Hello%20World')
+                        <pre class="text-sm"><code>fetch(<span class="code-string">'/text-to-speech?text=Hello%20World'</span>)
   .then(response => response.json())
   .then(data => {
-    if (data.status === 'success') {
-      const audioBlob = new Blob([atob(data.audio_base64)], { type: 'audio/mp3' });
-      const url = URL.createObjectURL(audioBlob);
-      const a = document.createElement('a');
+    <span class="code-keyword">if</span> (data.status === <span class="code-string">'success'</span>) {
+      <span class="code-keyword">const</span> audioBlob = <span class="code-keyword">new</span> Blob([atob(data.audio_base64)], { type: <span class="code-string">'audio/mp3'</span> });
+      <span class="code-keyword">const</span> url = URL.createObjectURL(audioBlob);
+      <span class="code-keyword">const</span> a = document.createElement(<span class="code-string">'a'</span>);
       a.href = url;
-      a.download = 'audio.mp3';
+      a.download = <span class="code-string">'audio.mp3'</span>;
       a.click();
-    } else {
-      console.error('Error:', data.error);
+    } <span class="code-keyword">else</span> {
+      console.error(<span class="code-string">'Error:'</span>, data.error);
     }
   })
-  .catch(error => console.error('Fetch error:', error));</code></pre>
+  .catch(error => console.error(<span class="code-string">'Fetch error:'</span>, error));</code></pre>
                     </div>
 
-                    <!-- Node.js Example -->
                     <div>
                         <h4 class="text-lg font-semibold">Node.js</h4>
-                        <pre class="text-sm"><code>const fs = require('fs');
-const https = require('https');
+                        <pre class="text-sm"><code><span class="code-keyword">const</span> fs = require(<span class="code-string">'fs'</span>);
+<span class="code-keyword">const</span> https = require(<span class="code-string">'https'</span>);
 
-https.get('https://tts-api-liart.vercel.app/text-to-speech?text=Hello%20World', (res) => {
-  let data = '';
-  res.on('data', (chunk) => { data += chunk; });
-  res.on('end', () => {
-    const json = JSON.parse(data);
-    if (json.status === 'success') {
-      fs.writeFileSync('audio.mp3', Buffer.from(json.audio_base64, 'base64'));
-      console.log('Audio downloaded!');
-    } else {
-      console.error('Error:', json.error);
+https.get(<span class="code-string">'https://tts-api-liart.vercel.app/text-to-speech?text=Hello%20World'</span>, (res) => {
+  <span class="code-keyword">let</span> data = <span class="code-string">''</span>;
+  res.on(<span class="code-string">'data'</span>, (chunk) => { data += chunk; });
+  res.on(<span class="code-string">'end'</span>, () => {
+    <span class="code-keyword">const</span> json = JSON.parse(data);
+    <span class="code-keyword">if</span> (json.status === <span class="code-string">'success'</span>) {
+      fs.writeFileSync(<span class="code-string">'audio.mp3'</span>, Buffer.from(json.audio_base64, <span class="code-string">'base64'</span>));
+      console.log(<span class="code-string">'Audio downloaded!'</span>);
+    } <span class="code-keyword">else</span> {
+      console.error(<span class="code-string">'Error:'</span>, json.error);
     }
   });
-}).on('error', (e) => console.error('HTTPS error:', e));</code></pre>
+}).on(<span class="code-string">'error'</span>, (e) => console.error(<span class="code-string">'HTTPS error:'</span>, e));</code></pre>
                     </div>
 
-                    <!-- cURL Example -->
                     <div>
                         <h4 class="text-lg font-semibold">cURL (Bash)</h4>
-                        <pre class="text-sm"><code>curl "https://tts-api-liart.vercel.app/text-to-speech?text=Hello%20World" > response.json
-# Then decode base64 manually if needed</code></pre>
+                        <pre class="text-sm"><code>curl <span class="code-string">"https://tts-api-liart.vercel.app/text-to-speech?text=Hello%20World"</span> > response.json
+<span class="code-comment"># Then decode base64 manually if needed</span></code></pre>
                     </div>
                 </div>
             </div>
         </section>
     </main>
 
-    <footer class="mt-8 text-center text-gray-500 dark:text-gray-400">
+    <footer class="mt-8 text-center text-gray-400">
         <p>Powered by ElevenLabs & Flask | Deployed on Vercel | © 2025</p>
     </footer>
 
     <script>
-        // Dark mode toggle
-        const darkToggle = document.getElementById('dark-toggle');
-        darkToggle.addEventListener('change', () => {
-            document.body.classList.toggle('dark');
-        });
-
         // Character count realtime
         const textArea = document.getElementById('text');
         const charCount = document.getElementById('char-count');
         textArea.addEventListener('input', () => {
             charCount.textContent = textArea.value.length;
             if (textArea.value.length > 1000) {
-                charCount.classList.add('text-red-600');
+                charCount.classList.add('text-red-500');
             } else {
-                charCount.classList.remove('text-red-600');
+                charCount.classList.remove('text-red-500');
             }
         });
 
@@ -309,11 +281,9 @@ https.get('https://tts-api-liart.vercel.app/text-to-speech?text=Hello%20World', 
 
                 if (data.status === 'success') {
                     let audioBase64 = data.audio_base64;
-                    // Validasi base64
                     if (!/^[A-Za-z0-9+/=]+$/.test(audioBase64)) {
-                        throw new Error('Invalid base64 string received from API.');
+                        throw new Error('Invalid base64 string received. Try simplifying the input text.');
                     }
-                    // Tambah padding jika perlu
                     const padding = (4 - audioBase64.length % 4) % 4;
                     audioBase64 += '='.repeat(padding);
 
@@ -333,10 +303,10 @@ https.get('https://tts-api-liart.vercel.app/text-to-speech?text=Hello%20World', 
                         document.body.removeChild(a);
                     };
                 } else {
-                    throw new Error(data.error);
+                    throw new Error(data.error || 'Failed to generate audio.');
                 }
             } catch (err) {
-                errorP.textContent = `Error: ${err.message}`;
+                errorP.textContent = `Error: ${err.message}. Try using simpler text (e.g., avoid special characters).`;
                 console.error('Error details:', err);
             }
         });
@@ -358,9 +328,9 @@ https.get('https://tts-api-liart.vercel.app/text-to-speech?text=Hello%20World', 
                 return new Blob(byteArrays, { type: mimeType });
             } catch (e) {
                 console.error('Base64 decoding error:', e);
-                throw new Error('Invalid base64 audio data.');
+                throw new Error('Invalid base64 audio data');
             }
         }
     </script>
 </body>
-                                                                 </html>
+    </html>
