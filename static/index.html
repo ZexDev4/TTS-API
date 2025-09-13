@@ -102,26 +102,32 @@
                         audioPlayer.src = audioSrc;
                         audioPlayer.style.display = 'block';
                         audioError.style.display = 'none';
-                        // Test if audio can load
                         audioPlayer.load();
                         audioPlayer.oncanplay = () => {
                             audioError.style.display = 'none';
+                            console.log('Audio loaded successfully');
                         };
-                        audioPlayer.onerror = () => {
+                        audioPlayer.onerror = (e) => {
                             audioError.textContent = 'Gagal memutar audio: Data audio tidak valid atau format tidak didukung';
                             audioError.style.display = 'block';
+                            console.error('Audio error:', e);
+                            console.log('Base64 length:', data.audio_base64.length);
+                            console.log('Base64 sample:', data.audio_base64.slice(0, 100));
                         };
                     } catch (e) {
                         audioError.textContent = `Gagal memproses audio: ${e.message}`;
                         audioError.style.display = 'block';
                         audioPlayer.src = '';
                         audioPlayer.style.display = 'none';
+                        console.error('Audio processing error:', e);
                     }
                 } else {
                     audioPlayer.src = '';
                     audioPlayer.style.display = 'none';
                     audioError.textContent = data.error || 'Tidak ada data audio';
                     audioError.style.display = 'block';
+                    console.log('API error:', data.error);
+                    console.log('Raw response:', data.raw_response || 'N/A');
                 }
             } catch (error) {
                 jsonResponse.innerHTML = `<span class="error">Error: ${error.message}</span>`;
@@ -129,6 +135,7 @@
                 audioPlayer.style.display = 'none';
                 audioError.textContent = `Gagal mengambil data: ${error.message}`;
                 audioError.style.display = 'block';
+                console.error('Fetch error:', error);
             }
         }
     </script>
