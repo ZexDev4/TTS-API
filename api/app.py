@@ -57,26 +57,15 @@ def text_to_speech():
         response = requests.post(url, headers=headers, json=data, stream=True)
         response.raise_for_status()
 
-        # Check content type
-        content_type = response.headers.get("content-type", "")
-        if "application/json" not in content_type and "text/event-stream" not in content_type:
-            return jsonify({"error": f"Unexpected content type: {content_type}"}), 500
-
         # Parse audio response
         audio_chunks = []
-        raw_response = response.text
-        for line in raw_response.splitlines():
+        for line in response.text.splitlines():
             line = line.strip()
             if line.startswith("{") and line.endswith("}"):
                 try:
                     obj = json.loads(line)
                     if "audio_base64" in obj:
-                        # Validate base64 string
-                        try:
-                            base64.b64decode(obj["audio_base64"], validate=True)
-                            audio_chunks.append(obj["audio_base64"])
-                        except base64.binascii.Error:
-                            continue  # Skip invalid base64
+                        audio_chunks.append(obj["audio_base64"])  # Collect base64 strings
                 except json.JSONDecodeError:
                     continue
 
@@ -84,21 +73,15 @@ def text_to_speech():
         if audio_chunks:
             # Join base64 chunks
             audio_base64 = "".join(audio_chunks)
-            # Verify the joined base64 string
-            try:
-                base64.b64decode(audio_base64, validate=True)
-            except base64.binascii.Error:
-                return jsonify({"error": "Invalid base64 audio data"}), 500
-
             return jsonify({
                 "status": "success",
                 "audio_base64": audio_base64
             }), 200
         else:
-            return jsonify({"error": "Tidak ada audio_base64 valid ditemukan di response.", "raw_response": raw_response[:1000]}), 500
+            return jsonify({"error": "Tidak ada audio_base64 ditemukan di response."}), 500
 
     except requests.RequestException as e:
-        return jsonify({"error": f"Gagal mengirim request: {str(e)}", "raw_response": response.text[:1000] if 'response' in locals() else ""}), 500
+        return jsonify({"error": f"Gagal mengirim request: {str(e)}"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
